@@ -5,8 +5,8 @@
 #define WIFI_PASS ""
 
 // Autenticação Adafriut IO
-#define IO_USERNAME  "guilhermeguimaraes11"
-#define IO_KEY       "aio_CIqd10k6jYEg5v4sInVd8As3mp6M"
+#define IO_USERNAME  ""
+#define IO_KEY       ""
 
 AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
 
