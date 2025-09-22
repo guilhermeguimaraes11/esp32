@@ -1,5 +1,6 @@
-
-
+#include <math.h>
+#include "AdafruitIO_WiFi.h"
+#include "NewPing.h"
 
 #define BUZZER_PIN 27
 #define LED_ALARME 13
@@ -7,25 +8,28 @@
 #define TRIG_PIN 12
 #define ECHO_PIN 14
 
- #include <math.h>
- #include "AdafruitIO_WiFi.h"
- #include "NewPing.h"
-
-// // Configuração do WiFi
-// #define WIFI_SSID "Iphone do Gui."
-// #define WIFI_PASS "guimaraes1123"
-
-// // Autenticação AdafuritIO
-// #define IO_USERNAME "guilhermeguimaraes11"
-// #define IO_KEY "aio_jAyf49C1xyl6QN66aQQKNm4kMTWg"
-
-// AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
-
-// AdafruitIO_Feed *botaoled = io.feed("botaoled");
-
-//Configuração do ultrassonico
+// Configuração do ultrassonico
 #define MAX_DISTANCE 100
 NewPing sonar(TRIG_PIN, ECHO_PIN, MAX_DISTANCE);
+
+// // Configurações da rede WIFI
+#define WIFI_SSID ""
+#define WIFI_PASS ""
+
+// // Autenticação Adafruit IO
+#define IO_USERNAME "guilhermeguimaraes11"
+#define IO_KEY ""
+
+AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
+
+// #define pinLed 14 //Pino do LED
+
+AdafruitIO_Feed *botaoalarme = io.feed("botaoalarme");
+AdafruitIO_Feed *distanciaultrassom = io.feed("distanciaultrassom");
+
+bool alarmeAtivo = false;
+unsigned int distancia = 0;
+int LIMITE_DISTANCIA = 15;
 
 void setup() {
 
@@ -33,52 +37,79 @@ void setup() {
   pinMode(LED_ALARME, OUTPUT);
   pinMode(BOTAO_FISICO, INPUT);
 
+  // pinMode(pinLed, OUTPUT);
+
   Serial.begin(115200);
 
   while (!Serial)
     ;
 
+  // Serial.print("Conectando ao Adafruit IO");
+  io.connect();
 
-  delay(1000);
+  while (io.status() < AIO_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+
+  Serial.println("");
+  Serial.println("Adafruit Conectado");
+
+  botaoalarme->onMessage(handleAlarme);
+
+  Serial.println("Solicitando o estado inicial do alarme: ");
+  botaoalarme->get();
+
+
+
+  // Serial.println();
+  // Serial.println(io.statusText());
+
+  // // Configuração do callack, quando o feed receber(atualizar) um valor
+  // botaoled -> onMessage(handleBotaoLed);
+
+  // // Registra a função de callback
+  // // Ela será chamada sempre que o feed receber um novo dado
 }
-
-
-//   Serial.println("Conectando com AdafruitIO");
-//   io.connect();
-
-//   int numTentativas = 0;
-
-//   while (io.status() < AIO_CONNECTED) {
-//     Serial.print(numTentativas);
-//     Serial.println(" - Conexão Ainda Não Realizada");
-//     numTentativas = numTentativas + 1;
-//     delay(500);
-//   }
-
-//   // Mostra status da conexão
-
-//   Serial.println();
-//   Serial.println(io.statusText());
-
-//   // Configuração do Callback, quando o feed recebe(atualizar) um valor
-
-//   botaoled->onMessage(handleBotaoLed);  // Registra a função de Callback
-
-//   delay(1000);
-// }
 
 void loop() {
 
+  // Manter a conexão com o Adafruit IO ativa
+  io.run();
   // testeBuzzer();
   // testeLed();
- //  testeButton(BOTAO_FISICO);
-  Serial.print(F("Distancia Lida: "));
+
+  // testeBotao(BOTAO_FISICO);
+  Serial.print(F("Distancia lida: "));
   Serial.println(sonar.ping_cm());
-  delay(500);
+
+  // Leitura botao fisico
+  if (digitalRead(BOTAO_FISICO) == 1) {
+    delay(200);
+    alarmeAtivo = !alarmeAtivo;
+
+    botaoalarme->save(alarmeAtivo ? "true" : "false");
+    Serial.println(alarmeAtivo ? "Alarme ARMADO pelo botao fisico" : "Alarme DESARMADO pelo botao fisico");
+  }
 
 
+  distancia = sonar.ping_cm();
+  Serial.print("Distancia lida: ");
+  Serial.println(distancia);
+  Serial.print(" cm");
 
+  if(distancia != 0){
+  // Só envia distancias válidas
+  distanciaultrassom -> save(distancia);
+  }
 
-  //   io.run();  // Manter a conexão com a AdrafuitIO Ativa
-  //   delay(3000);
+  // ativação ou desativação do alarme
+  if(alarmeAtivo && distancia > 0 && distancia < LIMITE_DISTANCIA){
+    ativarAlerta();
+  }
+  else{
+    desativarAlerta();
+  }
+
+  delay(3000);
 }
