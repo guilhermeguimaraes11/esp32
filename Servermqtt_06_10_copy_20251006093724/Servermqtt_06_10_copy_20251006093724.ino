@@ -4,7 +4,7 @@
 const char* ssid = "";
 const char* password = "";
 
-const char* mqttServer = "192.168.13.172"; // IP do seu servidor MQTT
+const char* mqttServer = ""; // IP do seu servidor MQTT
 const int mqttPort = 1883;
 
 WiFiClient espClient;
