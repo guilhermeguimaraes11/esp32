@@ -1,8 +1,8 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-const char* ssid = "fogazza";
-const char* password = "vini.2801";
+const char* ssid = "";
+const char* password = "";
 
 const char* mqttServer = "192.168.13.172"; // IP do seu servidor MQTT
 const int mqttPort = 1883;
